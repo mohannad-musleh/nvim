@@ -9,13 +9,11 @@ vim.g.have_nerd_font = os.getenv('TERM_PROGRAM') == 'WezTerm'
 
 vim.g.global_ignore_dirs = { '.git', 'node_modules' }
 
-if not os.getenv('NVIM_HEADLESS_MODE') then
-  require('config.options')
-  require('config.keymaps')
-  require('config.autocommands')
-  require('config.commands.init')
-  require('config.lazy')
-end
+require('config.options')
+require('config.keymaps')
+require('config.autocommands')
+require('config.commands.init')
+require('config.lazy')
 
 -- `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

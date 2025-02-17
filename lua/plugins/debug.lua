@@ -93,7 +93,23 @@ return {
 
       -- You can provide additional configuration to the handlers,
       -- see mason-nvim-dap README for more information
-      handlers = {},
+      handlers = {
+        python = function(config)
+          -- config.adapters = {
+          --   type = 'executable',
+          --   command = '/usr/bin/python3',
+          --   args = {
+          --     '-m',
+          --     'debugpy.adapter',
+          --   },
+          -- }
+          for _, conf in ipairs(config.configurations) do
+            conf['justMyCode'] = false
+          end
+
+          require('mason-nvim-dap').default_setup(config)
+        end,
+      },
 
       -- You'll need to check that you have the required things installed
       -- online, please don't ask me how to install them :)

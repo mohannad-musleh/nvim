@@ -35,6 +35,35 @@ return { -- LSP Plugins
 
       -- JSON & Yaml schema provider (used with jsonls)
       'b0o/SchemaStore.nvim',
+      {
+        'ziglang/zig.vim',
+        enabled = vim.fn.executable('zig') == 1,
+        init = function()
+          -- don't show parse errors in a separate window
+          vim.g.zig_fmt_parse_errors = 0
+          -- disable format-on-save from `ziglang/zig.vim`
+          vim.g.zig_fmt_autosave = 0
+        end,
+        config = function()
+          vim.api.nvim_create_autocmd({ 'BufReadPre' }, {
+            group = vim.api.nvim_create_augroup('zig.vim', { clear = true }),
+            pattern = { '*.zig', '*.zon' },
+            callback = function(ev)
+              -- Formatting with ZLS matches `zig fmt`.
+              -- The Zig FAQ answers some questions about `zig fmt`:
+              -- https://github.com/ziglang/zig/wiki/FAQ
+              vim.api.nvim_buf_set_keymap(
+                ev.buf,
+                'n',
+                '<leader>f',
+                ':lua vim.lsp.buf.format()<CR>',
+                { noremap = true, silent = true }
+              )
+              -- vim.lsp.buf.format()
+            end,
+          })
+        end,
+      },
     },
     config = function()
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -178,6 +207,10 @@ return { -- LSP Plugins
 
       if vim.fn.executable('go') == 1 then
         servers['gopls'] = {}
+      end
+
+      if vim.fn.executable('zig') == 1 then
+        servers['zls'] = {}
       end
 
       if vim.fn.executable('docker') == 1 then

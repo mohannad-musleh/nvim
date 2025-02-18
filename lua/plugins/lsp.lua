@@ -93,6 +93,11 @@ return { -- LSP Plugins
             vim.notify_once('LSP auto complete disabled for ' .. vim.bo[event.buf].filetype, vim.log.levels.INFO)
           end
 
+          if client ~= nil and client.name == 'ruff' then
+            -- Disable hover in favor of Pyright
+            client.server_capabilities.hoverProvider = false
+          end
+
           if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -194,16 +199,17 @@ return { -- LSP Plugins
 
           servers['mypy'] = {}
           servers['ruff'] = ruff_conf
-          servers['pyright'] = {
+          servers['basedpyright'] = {
             settings = {
-              pyright = {
-                -- Using Ruff's import organizer
+              basedpyright = {
                 disableOrganizeImports = true,
-              },
-              python = {
                 analysis = {
-                  -- Ignore all files for analysis to exclusively use Ruff for linting
-                  ignore = { '*' },
+                  -- ignore = { '*' },
+                  autoSearchPaths = true,
+                  useLibraryCodeForTypes = true,
+                  typeCheckingMode = 'standard',
+                  diagnosticMode = 'openFilesOnly',
+                  autoImportCompletions = true,
                 },
               },
             },

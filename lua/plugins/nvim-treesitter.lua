@@ -56,6 +56,16 @@ return {
       additional_vim_regex_highlighting = false,
     },
     indent = { enable = true, disable = { 'ruby' } },
+    -- https://github.com/nvim-treesitter/nvim-treesitter?tab=readme-ov-file#incremental-selection
+    incremental_selection = {
+      enable = true,
+      keymaps = {
+        init_selection = '<Enter>', -- set to `false` to disable one of the mappings
+        node_incremental = '<Enter>',
+        scope_incremental = false,
+        node_decremental = '<Backspace>',
+      },
+    },
   },
   config = function(_, opts)
     ---@diagnostic disable-next-line: missing-fields

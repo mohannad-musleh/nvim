@@ -302,22 +302,22 @@ return { -- LSP Plugins
             },
             validate = true,
           },
-          ts_ls = {
-            server_capabilities = {
-              documentFormattingProvider = false,
-            },
-            init_options = {
-              plugins = {
-                {
-                  name = '@vue/typescript-plugin',
-                  location = require('mason-registry').get_package('vue-language-server'):get_install_path()
-                    .. '/node_modules/@vue/language-server',
-                  languages = { 'vue' },
-                },
-              },
-            },
-            filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-          },
+          -- ts_ls = {
+          --   server_capabilities = {
+          --     documentFormattingProvider = false,
+          --   },
+          --   init_options = {
+          --     plugins = {
+          --       {
+          --         name = '@vue/typescript-plugin',
+          --         location = require('mason-registry').get_package('vue-language-server'):get_install_path()
+          --           .. '/node_modules/@vue/language-server',
+          --         languages = { 'vue' },
+          --       },
+          --     },
+          --   },
+          --   filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+          -- },
           -- volar = {},
           vue_ls = {},
           biome = {

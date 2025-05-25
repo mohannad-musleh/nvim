@@ -50,7 +50,7 @@ return {
 
       local lsp_format_opt = 'fallback'
       if lsp_fallback_disable_filetypes[filetype] then
-        lsp_format_opt = 'never'
+        return -- https://github.com/nvim-lua/kickstart.nvim/commit/5e2d7e184b9d097c683792a8e5daed50a395cb0b
       end
 
       return {

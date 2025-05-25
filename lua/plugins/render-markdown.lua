@@ -5,8 +5,10 @@
 return {
   'MeanderingProgrammer/render-markdown.nvim',
   dependencies = { 'nvim-treesitter/nvim-treesitter' },
-  enabled = false,
-  opts = {},
+  opts = {
+    -- Whether markdown should be rendered by default.
+    enabled = false,
+  },
   config = true,
 }
 

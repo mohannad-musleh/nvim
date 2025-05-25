@@ -45,6 +45,15 @@ if enable_go then
   })
 end
 
+if enable_python then
+  table.insert(dependencies, {
+    'mfussenegger/nvim-dap-python',
+    config = function()
+      require('dap-python').setup('uv')
+    end,
+  })
+end
+
 return {
   'mfussenegger/nvim-dap',
   dependencies = dependencies,
@@ -115,6 +124,16 @@ return {
       -- online, please don't ask me how to install them :)
       ensure_installed = ensure_installed,
     })
+
+    -- Example `nvim-dap-python` configuration for FastAPI project.
+    -- table.insert(dap.configurations.python or {}, {
+    --   type = 'python',
+    --   request = 'launch',
+    --   name = 'FastAPI',
+    --   module = 'fastapi',
+    --   args = { 'dev', './app/main.py', '--app', 'app', '--no-reload' },
+    --   -- ... more options, see https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings
+    -- })
 
     dap.listeners.after.event_initialized['dapui_config'] = dapui.open
     dap.listeners.before.event_terminated['dapui_config'] = dapui.close

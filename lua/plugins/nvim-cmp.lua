@@ -9,6 +9,7 @@ return {
     'roobert/tailwindcss-colorizer-cmp.nvim',
     'hrsh7th/cmp-nvim-lsp',
     'hrsh7th/cmp-path',
+    'hrsh7th/cmp-nvim-lsp-signature-help',
     'hrsh7th/cmp-buffer',
   },
   config = function()
@@ -25,6 +26,7 @@ return {
     table.insert(sources, { name = 'nvim_lsp' })
     table.insert(sources, { name = 'path' })
     table.insert(sources, { name = 'buffer' })
+    table.insert(sources, { name = 'nvim_lsp_signature_help' })
 
     require('tailwindcss-colorizer-cmp').setup({
       color_square_width = 2,

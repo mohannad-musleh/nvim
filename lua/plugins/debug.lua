@@ -1,5 +1,6 @@
 local enable_go = vim.fn.executable('go') == 1
 local enable_python = vim.fn.executable('python') == 1
+local enable_zig = vim.fn.executable('zig') == 1
 
 --- source: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/plugins/extras/dap/core.lua
 ---@param config {args?:string[]|fun():string[]?}
@@ -95,6 +96,11 @@ return {
       table.insert(ensure_installed, 'python')
     end
 
+    if enable_zig then
+      -- https://github.com/vadimcn/codelldb
+      table.insert(ensure_installed, 'codelldb')
+    end
+
     mason_dap.setup({
       -- Makes a best effort to setup the various debuggers with
       -- reasonable debug configurations
@@ -124,6 +130,19 @@ return {
       -- online, please don't ask me how to install them :)
       ensure_installed = ensure_installed,
     })
+
+    if enable_zig then
+      dap_vt.disable()
+      dap.adapters.codelldb = {
+        type = 'server',
+        port = '${port}',
+        host = '127.0.0.1',
+        executable = {
+          command = 'codelldb',
+          args = { '--port', '${port}' },
+        },
+      }
+    end
 
     -- Example `nvim-dap-python` configuration for FastAPI project.
     -- table.insert(dap.configurations.python or {}, {

@@ -75,6 +75,11 @@ vim.filetype.add({
   filename = {
     ['tmux.conf'] = 'tmux',
   },
+  extension = {
+    tmpl = 'gotmpl',
+    t = 'gotmpl',
+    ejson = 'json',
+  },
 })
 
 -- Enable NeoVim builtin spelling checker

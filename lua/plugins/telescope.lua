@@ -7,7 +7,8 @@
 
 local utils = require('utils')
 
-local default_file_ignore_patterns = utils.str_table_to_patterns(utils.merge_table_with_global_ignores({}))
+local default_file_ignore_patterns =
+  utils.str_table_to_patterns(utils.merge_table_with_global_ignores({ '.zig-cache' }))
 
 return { -- Fuzzy Finder (files, lsp, etc)
   'nvim-telescope/telescope.nvim',

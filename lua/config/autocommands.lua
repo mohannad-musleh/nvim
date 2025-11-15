@@ -52,7 +52,7 @@ vim.api.nvim_create_autocmd('BufReadPre', {
     local disable_treesitter = false
 
     if
-      is_big_file(bufnr) and utils.is_path_under_dirs(current_buffer_path, utils.merge_table_with_global_ignores({}))
+      is_big_file(bufnr) or utils.is_path_under_dirs(current_buffer_path, utils.merge_table_with_global_ignores({}))
     then
       disable_diagnostics = true
       disable_lsp = true

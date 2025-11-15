@@ -77,6 +77,7 @@ vim.opt.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpo
 vim.filetype.add({
   filename = {
     ['tmux.conf'] = 'tmux',
+    ['mise.lock'] = 'toml',
   },
   extension = {
     tmpl = 'gotmpl',

@@ -4,6 +4,9 @@
 
 local vars = require('vars')
 
+-- Disable line wrapping
+vim.opt.wrap = false
+
 -- Make line numbers default
 vim.opt.number = true
 vim.opt.relativenumber = true

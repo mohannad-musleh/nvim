@@ -38,7 +38,8 @@ return { -- LSP Plugins
       'b0o/SchemaStore.nvim',
       {
         'ziglang/zig.vim',
-        enabled = vim.fn.executable('zig') == 1,
+        -- enabled = vim.fn.executable('zig') == 1,
+        enabled = false,
         init = function()
           -- don't show parse errors in a separate window
           vim.g.zig_fmt_parse_errors = 0

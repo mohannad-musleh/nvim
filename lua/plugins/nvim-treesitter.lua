@@ -37,6 +37,7 @@ return {
       'javascript',
       'typescript',
       'gotmpl',
+      'vue',
     },
     -- Autoinstall languages that are not installed
     auto_install = true,

@@ -261,6 +261,31 @@ return { -- LSP Plugins
       end
 
       if vim.fn.executable('npm') == 1 then
+        local vue_language_server_path = vim.fn.stdpath('data')
+          .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
+
+        if vim.fn.isdirectory(vue_language_server_path) == 1 then
+          local vue_plugin = {
+            name = '@vue/typescript-plugin',
+            location = vue_language_server_path,
+            languages = { 'vue' },
+            configNamespace = 'typescript',
+          }
+
+          vim.lsp.config('vtsls', {
+            settings = {
+              vtsls = {
+                tsserver = {
+                  globalPlugins = {
+                    vue_plugin,
+                  },
+                },
+              },
+            },
+            filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+          })
+        end
+
         servers = vim.tbl_extend('force', servers, {
           html = {},
           cssls = {},
@@ -302,23 +327,6 @@ return { -- LSP Plugins
             },
             validate = true,
           },
-          -- ts_ls = {
-          --   server_capabilities = {
-          --     documentFormattingProvider = false,
-          --   },
-          --   init_options = {
-          --     plugins = {
-          --       {
-          --         name = '@vue/typescript-plugin',
-          --         location = require('mason-registry').get_package('vue-language-server'):get_install_path()
-          --           .. '/node_modules/@vue/language-server',
-          --         languages = { 'vue' },
-          --       },
-          --     },
-          --   },
-          --   filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-          -- },
-          -- volar = {},
           vue_ls = {},
           biome = {
             single_file_support = true,

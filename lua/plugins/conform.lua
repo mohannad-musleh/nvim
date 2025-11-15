@@ -14,7 +14,7 @@ local ignore_dirs = {}
 local lsp_fallback_disable_filetypes = { c = true, cpp = true }
 
 -- List of file types to disable format-on-save on
-local disable_filetypes = { python = true, jsonc = true }
+local disable_filetypes = { python = true, jsonc = true, vue = true }
 
 return {
   'stevearc/conform.nvim',

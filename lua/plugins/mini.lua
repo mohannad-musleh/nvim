@@ -1,6 +1,6 @@
 -- Library of 40+ independent Lua modules improving overall Neovim (version 0.8 and higher) experience with minimal effort
 --
--- https://github.com/echasnovski/mini.nvim
+-- https://github.com/nvim-mini/mini.nvim
 
 local root_patterns = { '.git', 'setup.py', 'pyproject.toml', '.mise.toml', '.mise.local.toml', 'package.json' }
 
@@ -20,7 +20,7 @@ end
 
 --- Check if there something shown in nvim or only an empty buffer
 ---
---- @see https://github.com/echasnovski/mini.nvim/blob/0bd6c4d25f2b0cc1ecb8b1a0f659cce54627e218/lua/mini/sessions.lua#L609-L610
+--- @see https://github.com/nvim-mini/mini.nvim/blob/0bd6c4d25f2b0cc1ecb8b1a0f659cce54627e218/lua/mini/sessions.lua#L609-L610
 local function is_something_shown()
   -- - Several buffers are listed (like session with placeholder buffers). That
   --   means unlisted buffers (like from `nvim-tree`) don't affect decision.
@@ -70,13 +70,13 @@ local function get_root_dir(cwd)
 end
 
 return {
-  'echasnovski/mini.nvim',
+  'nvim-mini/mini.nvim',
   config = function()
     require('mini.extra').setup()
 
     -- Better Around/Inside textobjects
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-ai.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-ai.md
     --
     -- Examples:
     --  - va)  - [V]isually select [A]round [)]paren
@@ -93,7 +93,7 @@ return {
 
     -- Add/delete/replace surroundings (brackets, quotes, etc.)
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-surround.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-surround.md
     --
     -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
     -- - sd'   - [S]urround [D]elete [']quotes
@@ -102,7 +102,7 @@ return {
 
     -- Session management
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-sessions.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-sessions.md
     local mini_sessions = require('mini.sessions')
     mini_sessions.setup({
       autoread = false,
@@ -114,8 +114,8 @@ return {
     --- IIFE that register an autocommand to automatically create and read default session for the current project (if available)
     ---
     --- References:
-    --- - https://github.com/echasnovski/mini.nvim/issues/890
-    --- - https://github.com/echasnovski/mini.nvim/blob/0bd6c4d25f2b0cc1ecb8b1a0f659cce54627e218/lua/mini/sessions.lua#L609-L610
+    --- - https://github.com/nvim-mini/mini.nvim/issues/890
+    --- - https://github.com/nvim-mini/mini.nvim/blob/0bd6c4d25f2b0cc1ecb8b1a0f659cce54627e218/lua/mini/sessions.lua#L609-L610
     (function()
       local augroup = vim.api.nvim_create_augroup('MiniSessionsCustomAutoCommands', {})
 
@@ -205,7 +205,7 @@ return {
 
     -- Highlight patterns in text
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-hipatterns.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-hipatterns.md
     local hipatterns = require('mini.hipatterns')
     hipatterns.setup({
       highlighters = {
@@ -216,7 +216,7 @@ return {
 
     -- Move any selection in any direction
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-move.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-move.md
     require('mini.move').setup({
       mappings = {
         -- Move visual selection in Visual mode. Defaults are Alt (Meta) + hjkl.
@@ -235,7 +235,7 @@ return {
 
     -- Visualize and work with indent scope
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-indentscope.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-indentscope.md
     local indentscope = require('mini.indentscope')
     indentscope.setup({
       draw = {
@@ -265,12 +265,12 @@ return {
     -- for example: `:lua vim.fn.setreg('+', MiniPick.builtin.cli({ command = { 'ls', '-lAh' } }))` will create picker
     --   from `ls` command and copy the picked item to clipboard
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-pick.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-pick.md
     require('mini.pick').setup()
 
     -- Text edit operators
     --
-    -- https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-operators.md
+    -- https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-operators.md
     require('mini.operators').setup({
       -- Each entry configures one operator.
       -- `prefix` defines keys mapped during `setup()`: in Normal mode

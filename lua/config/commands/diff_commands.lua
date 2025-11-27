@@ -122,13 +122,17 @@ vim.api.nvim_create_user_command('DiffToggleIgnoreWhitespace', function()
   end
 end, { nargs = 0, desc = 'Toggle ignore all whitespace in diff view' })
 
-vim.api.nvim_create_user_command('DiffClipboard', function()
-  diff_with_clipboard(false)
-end, { nargs = 0, desc = 'Diff/Compare the current buffer with the content of the clipboard' })
+vim.api.nvim_create_user_command(
+  'DiffClipboard',
+  function() diff_with_clipboard(false) end,
+  { nargs = 0, desc = 'Diff/Compare the current buffer with the content of the clipboard' }
+)
 
-vim.api.nvim_create_user_command('DiffClipboardSelection', function()
-  diff_with_clipboard(true)
-end, { nargs = 0, range = true, desc = 'Diff/Compare the visually selected text with the content of the clipboard' })
+vim.api.nvim_create_user_command(
+  'DiffClipboardSelection',
+  function() diff_with_clipboard(true) end,
+  { nargs = 0, range = true, desc = 'Diff/Compare the visually selected text with the content of the clipboard' }
+)
 
 vim.api.nvim_create_user_command('DiffFiles', function()
   utils.pick_file(function(first_file)

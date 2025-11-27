@@ -25,9 +25,7 @@ return {
       '<leader>f',
       mode = '',
       desc = '[F]ormat buffer',
-      function()
-        require('conform').format({ timeout_ms = 500, lsp_format = 'fallback' })
-      end,
+      function() require('conform').format({ timeout_ms = 500, lsp_format = 'fallback' }) end,
     },
   },
   ---@module "conform"

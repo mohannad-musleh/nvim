@@ -76,9 +76,12 @@ return {
     require('treesitter-context').setup({ max_lines = 10, line_numbers = false })
 
     -- Jumping to context (upwards)
-    vim.keymap.set('n', '[u', function()
-      require('treesitter-context').go_to_context(vim.v.count1)
-    end, { silent = true, desc = 'Jumping to context (upwards)' })
+    vim.keymap.set(
+      'n',
+      '[u',
+      function() require('treesitter-context').go_to_context(vim.v.count1) end,
+      { silent = true, desc = 'Jumping to context (upwards)' }
+    )
   end,
 }
 

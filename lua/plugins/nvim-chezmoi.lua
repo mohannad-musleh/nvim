@@ -16,7 +16,5 @@ return {
       apply_on_save = 'never',
     },
   },
-  config = function(_, opts)
-    require('nvim-chezmoi').setup(opts)
-  end,
+  config = function(_, opts) require('nvim-chezmoi').setup(opts) end,
 }

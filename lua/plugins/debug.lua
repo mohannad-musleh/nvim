@@ -49,9 +49,7 @@ end
 if enable_python then
   table.insert(dependencies, {
     'mfussenegger/nvim-dap-python',
-    config = function()
-      require('dap-python').setup('uv')
-    end,
+    config = function() require('dap-python').setup('uv') end,
   })
 end
 

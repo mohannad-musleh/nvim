@@ -19,9 +19,11 @@ return {
     local zen_mode = require('zen-mode')
     zen_mode.setup(opts)
 
-    vim.api.nvim_create_user_command('SplitZoom', function()
-      zen_mode.toggle({ window = { width = 1, height = 1 } })
-    end, { desc = 'Make the focused split take full space' })
+    vim.api.nvim_create_user_command(
+      'SplitZoom',
+      function() zen_mode.toggle({ window = { width = 1, height = 1 } }) end,
+      { desc = 'Make the focused split take full space' }
+    )
   end,
 }
 

@@ -21,46 +21,34 @@ return {
         global_keymaps = {
           ['Send request'] = { -- sets global mapping
             '<leader>hs',
-            function()
-              require('kulala').run()
-            end,
+            function() require('kulala').run() end,
             mode = default_mode,
             ft = default_ft,
           },
           ['Send all requests'] = {
             '<leader>ha',
-            function()
-              require('kulala').run_all()
-            end,
+            function() require('kulala').run_all() end,
             mode = default_mode,
             ft = default_ft,
           },
           ['Replay the last request'] = {
             '<leader>hr',
-            function()
-              require('kulala').replay()
-            end,
+            function() require('kulala').replay() end,
             ft = default_ft,
           },
           ['Clear responses history'] = {
             '<leader>hx',
-            function()
-              require('kulala.ui').clear_responses_history()
-            end,
+            function() require('kulala.ui').clear_responses_history() end,
             ft = default_ft,
           },
           ['Clear globals'] = {
             '<leader>hgx',
-            function()
-              require('kulala').scripts_clear_global()
-            end,
+            function() require('kulala').scripts_clear_global() end,
             ft = default_ft,
           },
           ['Clear cached files'] = {
             '<leader>hcx',
-            function()
-              require('kulala').clear_cached_files()
-            end,
+            function() require('kulala').clear_cached_files() end,
             ft = default_ft,
           },
         },

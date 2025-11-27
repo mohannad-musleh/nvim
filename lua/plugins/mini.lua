@@ -24,9 +24,10 @@ end
 local function is_something_shown()
   -- - Several buffers are listed (like session with placeholder buffers). That
   --   means unlisted buffers (like from `nvim-tree`) don't affect decision.
-  local listed_buffers = vim.tbl_filter(function(buf_id)
-    return vim.fn.buflisted(buf_id) == 1
-  end, vim.api.nvim_list_bufs())
+  local listed_buffers = vim.tbl_filter(
+    function(buf_id) return vim.fn.buflisted(buf_id) == 1 end,
+    vim.api.nvim_list_bufs()
+  )
   if #listed_buffers > 1 then
     return true
   end
@@ -125,9 +126,11 @@ return {
 
       local default_session_name = get_default_session_name_from_path(root_dir)
 
-      vim.api.nvim_create_user_command('DefaultSessionName', function()
-        print(default_session_name)
-      end, { desc = 'Get current default session name' })
+      vim.api.nvim_create_user_command(
+        'DefaultSessionName',
+        function() print(default_session_name) end,
+        { desc = 'Get current default session name' }
+      )
 
       if default_session_name == nil then
         return
@@ -193,9 +196,12 @@ return {
       end
     end, { desc = '[W]orkspace [W]rite' })
 
-    vim.keymap.set('n', '<leader>wfd', function()
-      MiniSessions.delete(nil, { force = true })
-    end, { desc = '[W]orkspace [F]orce [D]elete' })
+    vim.keymap.set(
+      'n',
+      '<leader>wfd',
+      function() MiniSessions.delete(nil, { force = true }) end,
+      { desc = '[W]orkspace [F]orce [D]elete' }
+    )
 
     -- Highlight patterns in text
     --

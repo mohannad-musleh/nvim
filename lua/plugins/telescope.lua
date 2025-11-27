@@ -25,9 +25,7 @@ return { -- Fuzzy Finder (files, lsp, etc)
 
       -- `cond` is a condition used to determine whether this plugin should be
       -- installed and loaded.
-      cond = function()
-        return vim.fn.executable('make') == 1
-      end,
+      cond = function() return vim.fn.executable('make') == 1 end,
     },
     { 'nvim-telescope/telescope-ui-select.nvim' },
   },
@@ -47,9 +45,7 @@ return { -- Fuzzy Finder (files, lsp, etc)
       },
       live_grep = {
         file_ignore_patterns = vim.tbl_deep_extend('force', default_file_ignore_patterns, {}),
-        additional_args = function(_)
-          return { '--hidden' }
-        end,
+        additional_args = function(_) return { '--hidden' } end,
       },
     },
     extensions = {
@@ -79,9 +75,7 @@ return { -- Fuzzy Finder (files, lsp, etc)
     vim.keymap.set('n', '<leader>sF', function()
       builtin.find_files({
         hidden = true,
-        find_command = function()
-          return { 'fd', '--type', 'f', '--color', 'never', '--no-ignore' }
-        end,
+        find_command = function() return { 'fd', '--type', 'f', '--color', 'never', '--no-ignore' } end,
       })
     end, { desc = '[S]earch [F]iles (including hidden files)' })
     vim.keymap.set('n', '<C-p>', builtin.git_files, { desc = 'Search Git Files' })
@@ -91,20 +85,25 @@ return { -- Fuzzy Finder (files, lsp, etc)
     vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
     vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
     vim.keymap.set('n', '<leader>sls', builtin.lsp_document_symbols, { desc = '[S]earch [L]SP document [S]ymbols' })
-    vim.keymap.set('n', '<leader>sp', function()
-      builtin.find_files({
-        cwd = vim.fs.joinpath(vim.fn.stdpath('data'), 'lazy'),
-      })
-    end, { desc = '[S]earch nvim [P]ackages' })
+    vim.keymap.set(
+      'n',
+      '<leader>sp',
+      function()
+        builtin.find_files({
+          cwd = vim.fs.joinpath(vim.fn.stdpath('data'), 'lazy'),
+        })
+      end,
+      { desc = '[S]earch nvim [P]ackages' }
+    )
     vim.keymap.set('n', '<leader><leader>', function()
       builtin.buffers({
         initial_mode = 'normal',
         attach_mappings = function(prompt_bufnr, map)
           map('n', '<M-D>', function()
             local current_picker = action_state.get_current_picker(prompt_bufnr)
-            current_picker:delete_selection(function(selection)
-              vim.api.nvim_buf_delete(selection.bufnr, { force = true })
-            end)
+            current_picker:delete_selection(
+              function(selection) vim.api.nvim_buf_delete(selection.bufnr, { force = true }) end
+            )
           end, { desc = 'delete_buffer! (Force delete)' })
 
           return true

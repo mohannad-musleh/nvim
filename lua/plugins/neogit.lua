@@ -26,17 +26,13 @@ return {
             {
               'n',
               'q',
-              function()
-                vim.cmd('DiffviewClose')
-              end,
+              function() vim.cmd('DiffviewClose') end,
               { desc = 'Close file history view' },
             },
             {
               'n',
               '<C-c>',
-              function()
-                vim.cmd('DiffviewClose')
-              end,
+              function() vim.cmd('DiffviewClose') end,
               { desc = 'Close file history view' },
             },
           },

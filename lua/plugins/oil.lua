@@ -62,9 +62,7 @@ return {
     vim.api.nvim_create_autocmd('FileType', {
       pattern = 'oil',
       group = vim.api.nvim_create_augroup('OilFileTypeMappings', { clear = true }),
-      callback = function()
-        vim.keymap.set('n', '<Esc>', require('oil').close, { buffer = 0, silent = true })
-      end,
+      callback = function() vim.keymap.set('n', '<Esc>', require('oil').close, { buffer = 0, silent = true }) end,
     })
 
     vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })

@@ -22,7 +22,7 @@ end
 function M.pick_file(callback, opts)
   local is_telescope_installed, _ = pcall(require, 'telescope')
   if not is_telescope_installed then
-    vim.api.nvim_err_writeln('`telescope.nvim` plugin must be installed and setup before using `pick_file`.')
+    vim.notify('`telescope.nvim` plugin must be installed and setup before using `pick_file`.', vim.log.levels.ERROR)
     return
   end
 

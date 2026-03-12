@@ -60,6 +60,23 @@ return {
       lua = { 'stylua' },
     },
   },
+  ---@module "conform"
+  ---@param _ any
+  ---@param opts conform.setupOpts
+  config = function(_, opts)
+    if vim.g.is_oxfmt_available then
+      opts.formatters_by_ft = vim.tbl_deep_extend('force', opts.formatters_by_ft or {}, {
+        javascript = { 'oxfmt' },
+        javascriptreact = { 'oxfmt' },
+        typescript = { 'oxfmt' },
+        typescriptreact = { 'oxfmt' },
+        json = { 'oxfmt' },
+        vue = { 'oxfmt' },
+      })
+    end
+
+    require('conform').setup(opts)
+  end,
 }
 
 -- vim: ts=2 sts=2 sw=2 et

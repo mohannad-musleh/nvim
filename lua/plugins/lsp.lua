@@ -222,6 +222,30 @@ return { -- LSP Plugins
         servers['docker_compose_language_service'] = {}
       end
 
+      if vim.g.is_oxfmt_available then
+        servers['oxfmt'] = {}
+      else
+        servers['biome'] = {
+          single_file_support = true,
+          on_new_config = function(new_config, new_root_dir)
+            local biome_global_config_path = os.getenv('GLOBAL_BIOME_CONFIG_PATH')
+            if biome_global_config_path == nil or biome_global_config_path == '' then
+              return
+            end
+
+            if not new_config.root_dir(new_root_dir, 0) then
+              if not (vim.uv or vim.loop).fs_stat(biome_global_config_path) then
+                return
+              end
+
+              -- vim.notify('Fallback to biome global config file', vim.log.levels.DEBUG, { timeout = false })
+              new_config.cmd_env = new_config.cmd_env or {}
+              new_config.cmd_env['BIOME_CONFIG_PATH'] = biome_global_config_path
+            end
+          end,
+        }
+      end
+
       if vim.fn.executable('python') == 1 then
         local ruff_conf = {}
 
@@ -331,25 +355,6 @@ return { -- LSP Plugins
             validate = true,
           },
           vue_ls = {},
-          biome = {
-            single_file_support = true,
-            on_new_config = function(new_config, new_root_dir)
-              local biome_global_config_path = os.getenv('GLOBAL_BIOME_CONFIG_PATH')
-              if biome_global_config_path == nil or biome_global_config_path == '' then
-                return
-              end
-
-              if not new_config.root_dir(new_root_dir, 0) then
-                if not (vim.uv or vim.loop).fs_stat(biome_global_config_path) then
-                  return
-                end
-
-                -- vim.notify('Fallback to biome global config file', vim.log.levels.DEBUG, { timeout = false })
-                new_config.cmd_env = new_config.cmd_env or {}
-                new_config.cmd_env['BIOME_CONFIG_PATH'] = biome_global_config_path
-              end
-            end,
-          },
         })
       end
 

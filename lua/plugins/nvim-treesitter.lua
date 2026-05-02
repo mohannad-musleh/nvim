@@ -10,6 +10,7 @@
 
 return {
   'nvim-treesitter/nvim-treesitter',
+  commit = 'cf12346',
   build = ':TSUpdate',
   main = 'nvim-treesitter.configs', -- Sets main module to use for opts
   dependencies = {

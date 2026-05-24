@@ -1,5 +1,20 @@
 M = {}
 
+--- Wraps a function so it can only be called once.
+--- @param fn function
+--- @return function
+function M.once(fn)
+  local called = false
+  local result
+  return function(...)
+    if not called then
+      called = true
+      result = fn(...)
+    end
+    return result
+  end
+end
+
 function M.trim(str, char)
   local pattern = '^(' .. char .. '*)(.-)(' .. char .. '*)$'
   return str:gsub(pattern, '%2')
@@ -14,6 +29,15 @@ function M.is_valid_directory_path(path)
   return stat ~= nil and stat.type == 'directory'
 end
 
+---Check if the path is valid and points to a file
+---
+---@param path string
+---@return boolean
+function M.is_valid_file_path(path)
+  local stat = vim.uv.fs_stat(path)
+  return stat ~= nil and stat.type == 'file'
+end
+
 ---Show a file picker and call the callback wit the selected file path, if the user cancel the selection,
 ---the callback will be called with `nil`
 ---
@@ -26,9 +50,9 @@ function M.pick_file(callback, opts)
     return
   end
 
-  local action_state = require('telescope.actions.state')
-  local builtin = require('telescope.builtin')
-  local actions = require('telescope.actions')
+  local action_state = require 'telescope.actions.state'
+  local builtin = require 'telescope.builtin'
+  local actions = require 'telescope.actions'
 
   opts = vim.tbl_deep_extend('force', (opts or {}), {
     attach_mappings = function(_, map)
@@ -133,13 +157,9 @@ end
 ---@param t table
 ---@return table
 function M.merge_table_with_global_ignores(t)
-  if type(vim.g.global_ignore_dirs) == 'table' and #vim.g.global_ignore_dirs > 0 then
-    t = M.merge_tables_unique(t, vim.g.global_ignore_dirs)
-  end
+  if type(vim.g.global_ignore_dirs) == 'table' and #vim.g.global_ignore_dirs > 0 then t = M.merge_tables_unique(t, vim.g.global_ignore_dirs) end
 
-  if type(vim.g.local_ignore_dirs) == 'table' and #vim.g.local_ignore_dirs > 0 then
-    t = M.merge_tables_unique(t, vim.g.local_ignore_dirs)
-  end
+  if type(vim.g.local_ignore_dirs) == 'table' and #vim.g.local_ignore_dirs > 0 then t = M.merge_tables_unique(t, vim.g.local_ignore_dirs) end
 
   return t
 end
@@ -150,15 +170,11 @@ end
 ---@param directories table<string> list of directories' names to check if the path includes one of them (NOTE: only include the directory name, no `/` needed nor characters escaping)
 ---@return boolean
 function M.is_path_under_dirs(path, directories)
-  if not path or path == '' or type(directories) ~= 'table' or #directories < 1 then
-    return false
-  end
+  if not path or path == '' or type(directories) ~= 'table' or #directories < 1 then return false end
 
   for _, dir_name in ipairs(directories) do
     local pattern = M.str_to_pattern('/' .. M.trim(dir_name, '/') .. '/')
-    if path:match(pattern) then
-      return true
-    end
+    if path:match(pattern) then return true end
   end
 
   return false
@@ -193,6 +209,36 @@ function M.copy_buffer_path(bufnr)
 
   vim.fn.setreg('+', path)
   return path
+end
+
+--- Checks if a target path is contained within a base directory.
+--- Resolves symlinks and normalizes paths to ensure accuracy on Linux and macOS.
+---
+---@param parent string The potential parent directory (e.g., "/etc").
+---@param child string The path to check (e.g., "/etc/hosts").
+---@return boolean # True if target is a subpath of base, false otherwise.
+function M.is_subpath(parent, child)
+  if parent == nil or parent == '' or child == nil or child == '' then return false end
+
+  -- Normalize paths: resolve absolute path and remove trailing slash
+  local p = vim.fs.abspath(parent):gsub('[/\\]$', '')
+  local c = vim.fs.abspath(child):gsub('[/\\]$', '')
+
+  -- Check if child starts with parent
+  return vim.startswith(c, p)
+end
+
+---`vim.fn.executable`, but it handles `mise` shims
+---
+--- @param expr string
+---@return boolean # `true` if is a valid executable, false otherwise.
+function M.executable(expr)
+  if vim.fn.executable(expr) == 1 then
+    local path = vim.fn.exepath(expr)
+    return not (M.is_subpath(vim.env.MISE_DATA_DIR, path) and path:find('shims', 1, true))
+  end
+
+  return false
 end
 
 return M

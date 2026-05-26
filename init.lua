@@ -918,7 +918,7 @@ do
       })
     end
 
-    do -- json lsp + json schemas support
+    if utils.executable 'npm' then -- json lsp + json schemas support
       vim.pack.add {
         gh 'b0o/SchemaStore.nvim',
       }
@@ -1132,8 +1132,8 @@ do
     require('nvim-treesitter').install(parsers)
 
     vim.api.nvim_create_user_command('SyncTSInstall', function()
-        require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins
-        vim.cmd("quitall")
+      require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins
+      vim.cmd 'quitall'
     end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time and close/exit neovim' })
 
     require('treesitter-context').setup { max_lines = 10, line_numbers = false }

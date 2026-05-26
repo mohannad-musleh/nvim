@@ -29,6 +29,8 @@ require('vim._core.ui2').enable {}
 
 require 'config'
 
+local treesitter_installed = false
+
 -- Table of parsers to be installed additional to the default ones (used with ensure_installed)
 local additional_treesitter_parsers = {}
 -- ============================================================
@@ -1111,30 +1113,7 @@ do
       { src = gh 'nvim-treesitter/nvim-treesitter-context' },
     }
 
-    -- Ensure basic parsers are installed
-    -- local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-    local parsers = vim.list_extend({
-      'bash',
-      'c',
-      'diff',
-      'lua',
-      'luadoc',
-      'markdown',
-      'markdown_inline',
-      'query',
-      'vim',
-      'vimdoc',
-      'regex',
-      'json',
-      'http',
-    }, additional_treesitter_parsers)
-
-    require('nvim-treesitter').install(parsers)
-
-    vim.api.nvim_create_user_command('SyncTSInstall', function()
-      require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins
-      vim.cmd 'quitall'
-    end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time and close/exit neovim' })
+    treesitter_installed = true
 
     require('treesitter-context').setup { max_lines = 10, line_numbers = false }
 
@@ -1167,7 +1146,6 @@ do
       end
     end
 
-    local available_parsers = require('nvim-treesitter').get_available()
     vim.api.nvim_create_autocmd('FileType', {
       callback = function(args)
         local buf, filetype = args.buf, args.match
@@ -1176,6 +1154,7 @@ do
         if not language then return end
 
         local installed_parsers = require('nvim-treesitter').get_installed 'parsers'
+        local available_parsers = require('nvim-treesitter').get_available()
 
         if vim.tbl_contains(installed_parsers, language) then
           -- Enable the parser if it is already installed
@@ -1643,6 +1622,33 @@ do
       vim.keymap.set('n', '<M-l>', sp.resize_right, { desc = 'resize window split to the right side' })
     end)
   end
+
+  if treesitter_installed then
+    -- Ensure basic parsers are installed
+    -- local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+    local parsers = vim.list_extend({
+      'bash',
+      'c',
+      'diff',
+      'lua',
+      'luadoc',
+      'markdown',
+      'markdown_inline',
+      'query',
+      'vim',
+      'vimdoc',
+      'regex',
+      'json',
+      'http',
+    }, additional_treesitter_parsers)
+
+    require('nvim-treesitter').install(parsers)
+
+    vim.api.nvim_create_user_command('SyncTSInstall', function()
+      require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins
+      vim.cmd 'quitall'
+    end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time and close/exit neovim' })
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -1650,65 +1656,88 @@ end
 -- Automatically provisions the environment when running headlessly
 -------------------------------------------------------------------------------
 if vim.env.RUN_BOOTSTRAP then
-  vim.api.nvim_create_autocmd('VimEnter', {
-    once = true,
-    callback = function()
-      vim.schedule(function()
-        print '\n=== Headless Bootstrap Started ==='
+  -------------------------------------------------------------------------------
+  -- HEADLESS BOOTSTRAP AUTOMATION
+  -------------------------------------------------------------------------------
+  -- Custom logger that forces output directly to the terminal stdout
+  -- (Standard `print` often gets buffered and hidden in headless mode)
+  local function log(msg)
+    io.write('[Bootstrap] ' .. msg .. '\n')
+    io.flush()
+  end
 
-        -- 1. Trigger the vim.pack lockfile synchronization
-        vim.pack.update(nil, { target = 'lockfile', force = true })
+  vim.schedule(function()
+    log '=== Headless Bootstrap Started ==='
 
-        -- Create a tracking timer to handle the asynchronous nature of vim.pack
-        local debounce_timer = vim.uv.new_timer()
+    -- 1. TRIGGER PLUGIN INSTALLATION
+    log 'Syncing vim.pack lockfile...'
+    local update_ok, err = pcall(function() vim.pack.update(nil, { target = 'lockfile', force = true }) end)
+    if not update_ok then log('Warning: vim.pack.update failed: ' .. tostring(err)) end
 
-        -- Define the sequential installer for steps 2 and 3
-        local function run_remaining_installers()
-          debounce_timer:stop()
-          debounce_timer:close()
+    -- We use a timer to wait for async git clones to finish.
+    -- Every time a plugin installs, the timer resets. Once the network goes
+    -- quiet for 3 seconds, we move on to Tree-sitter and Mason.
+    local debounce_timer = vim.uv.new_timer()
 
-          -- 2. Tree-sitter Phase (Synchronous via .wait())
-          vim.cmd 'packadd nvim-treesitter'
-          local ts_ok, ts = pcall(require, 'nvim-treesitter')
-          if ts_ok then
-            print '→ Installing Tree-sitter parsers...'
-            local parsers = { 'c', 'lua', 'vim', 'vimdoc', 'query' }
-            ts.install(parsers):wait(300000) -- Blocks the thread for up to 5 minutes
-          else
-            print '⚠ nvim-treesitter could not be loaded.'
-          end
+    local function run_post_install_hooks()
+      debounce_timer:stop()
+      debounce_timer:close()
+      log 'Plugin synchronization settled.'
 
-          -- 3. Mason Phase (Synchronous via MasonInstall)
-          vim.cmd 'packadd mason.nvim'
-          local mason_ok, mason = pcall(require, 'mason')
-          if mason_ok then
-            print '→ Installing Mason LSPs & Debuggers...'
-            mason.setup()
+      -- 2. TREE-SITTER PHASE
+      log '→ Setting up Tree-sitter...'
+      vim.cmd 'packadd nvim-treesitter'
+      local ts_ok, ts = pcall(require, 'nvim-treesitter')
+      if ts_ok then
+        local parsers = { 'c', 'lua', 'vim', 'vimdoc', 'query' }
+        log('Compiling parsers: ' .. table.concat(parsers, ', '))
 
-            -- Add all the LSPs, formatters, and debuggers you want installed
-            local tools = { 'lua-language-server', 'stylua' }
+        -- Blocks the Lua thread synchronously until finished
+        ts.install(parsers):wait(300000)
+        log '✓ Tree-sitter compilation complete.'
+      else
+        log '⚠ nvim-treesitter could not be loaded.'
+      end
 
-            -- MasonInstall natively blocks the main thread when running headlessly
-            vim.cmd('MasonInstall ' .. table.concat(tools, ' '))
-          else
-            print '⚠ mason.nvim could not be loaded.'
-          end
+      -- 3. MASON PHASE
+      log '→ Setting up Mason LSPs & Debuggers...'
+      vim.cmd 'packadd mason.nvim'
+      local mason_ok, mason = pcall(require, 'mason')
+      if mason_ok then
+        mason.setup()
+        local tools = { 'lua-language-server', 'stylua' }
+        log('Installing: ' .. table.concat(tools, ', '))
 
-          print '=== Headless Bootstrap Complete! Exiting... ===\n'
-          vim.cmd 'quitall!'
-        end
+        -- MasonInstall natively blocks the main thread in headless mode
+        vim.cmd('MasonInstall ' .. table.concat(tools, ' '))
+        log '✓ Mason tools installed.'
+      else
+        log '⚠ mason.nvim could not be loaded.'
+      end
 
-        -- Whenever a plugin finishes downloading, push the timer back by 2 seconds
-        vim.api.nvim_create_autocmd('PackChanged', {
-          callback = function()
-            debounce_timer:stop()
-            debounce_timer:start(2000, 0, vim.schedule_wrap(run_remaining_installers))
-          end,
-        })
+      -- 4. TEARDOWN
+      log '=== Headless Bootstrap Complete! Exiting... ==='
+      vim.cmd 'qa!'
+    end
 
-        -- Fallback: If plugins are already up-to-date, proceed after 2 seconds
-        debounce_timer:start(2000, 0, vim.schedule_wrap(run_remaining_installers))
-      end)
-    end,
-  })
+    -- Listen for installation events to track progress and reset the timer
+    vim.api.nvim_create_autocmd('PackChanged', {
+      callback = function(ev)
+        if ev.data and ev.data.kind == 'install' then log('Downloaded: ' .. (ev.data.spec.name or 'unknown plugin')) end
+        -- Reset the 3-second countdown whenever a plugin lands
+        debounce_timer:stop()
+        debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+      end,
+    })
+
+    -- Start the initial countdown (If all plugins are already installed,
+    -- PackChanged won't fire, and it will proceed after 3 seconds)
+    debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+
+    -- Ultimate Safety Net: Force quit with an error code if stuck for 10 minutes
+    vim.defer_fn(function()
+      log 'CRITICAL: Bootstrap timed out after 10 minutes. Aborting.'
+      vim.cmd 'cquit'
+    end, 600000)
+  end)
 end

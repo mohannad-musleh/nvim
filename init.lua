@@ -1644,3 +1644,71 @@ do
     end)
   end
 end
+
+-------------------------------------------------------------------------------
+-- HEADLESS BOOTSTRAP AUTOMATION
+-- Automatically provisions the environment when running headlessly
+-------------------------------------------------------------------------------
+if vim.env.RUN_BOOTSTRAP then
+  vim.api.nvim_create_autocmd('VimEnter', {
+    once = true,
+    callback = function()
+      vim.schedule(function()
+        print '\n=== Headless Bootstrap Started ==='
+
+        -- 1. Trigger the vim.pack lockfile synchronization
+        vim.pack.update(nil, { target = 'lockfile', force = true })
+
+        -- Create a tracking timer to handle the asynchronous nature of vim.pack
+        local debounce_timer = vim.uv.new_timer()
+
+        -- Define the sequential installer for steps 2 and 3
+        local function run_remaining_installers()
+          debounce_timer:stop()
+          debounce_timer:close()
+
+          -- 2. Tree-sitter Phase (Synchronous via .wait())
+          vim.cmd 'packadd nvim-treesitter'
+          local ts_ok, ts = pcall(require, 'nvim-treesitter')
+          if ts_ok then
+            print '→ Installing Tree-sitter parsers...'
+            local parsers = { 'c', 'lua', 'vim', 'vimdoc', 'query' }
+            ts.install(parsers):wait(300000) -- Blocks the thread for up to 5 minutes
+          else
+            print '⚠ nvim-treesitter could not be loaded.'
+          end
+
+          -- 3. Mason Phase (Synchronous via MasonInstall)
+          vim.cmd 'packadd mason.nvim'
+          local mason_ok, mason = pcall(require, 'mason')
+          if mason_ok then
+            print '→ Installing Mason LSPs & Debuggers...'
+            mason.setup()
+
+            -- Add all the LSPs, formatters, and debuggers you want installed
+            local tools = { 'lua-language-server', 'stylua' }
+
+            -- MasonInstall natively blocks the main thread when running headlessly
+            vim.cmd('MasonInstall ' .. table.concat(tools, ' '))
+          else
+            print '⚠ mason.nvim could not be loaded.'
+          end
+
+          print '=== Headless Bootstrap Complete! Exiting... ===\n'
+          vim.cmd 'quitall!'
+        end
+
+        -- Whenever a plugin finishes downloading, push the timer back by 2 seconds
+        vim.api.nvim_create_autocmd('PackChanged', {
+          callback = function()
+            debounce_timer:stop()
+            debounce_timer:start(2000, 0, vim.schedule_wrap(run_remaining_installers))
+          end,
+        })
+
+        -- Fallback: If plugins are already up-to-date, proceed after 2 seconds
+        debounce_timer:start(2000, 0, vim.schedule_wrap(run_remaining_installers))
+      end)
+    end,
+  })
+end

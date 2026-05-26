@@ -820,13 +820,20 @@ do
       },
     }
 
-    if utils.executable 'gopls' then servers['gopls'] = {} end
+    if utils.executable 'gopls' then
+      servers['gopls'] = {}
+      table.insert(additional_treesitter_parsers, 'go')
+    end
 
-    if utils.executable 'zls' then servers['zls'] = {} end
+    if utils.executable 'zls' then
+      servers['zls'] = {}
+      table.insert(additional_treesitter_parsers, 'zig')
+    end
 
     if utils.executable 'docker' then
       servers['dockerls'] = {}
       servers['docker_compose_language_service'] = {}
+      table.insert(additional_treesitter_parsers, 'dockerfile')
     end
 
     if utils.executable 'python' then

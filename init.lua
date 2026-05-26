@@ -1133,7 +1133,8 @@ do
 
     vim.api.nvim_create_user_command('SyncTSInstall', function()
         require('nvim-treesitter').install(parsers):wait(1 * 60 * 1000)
-    end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time' })
+        vim.cmd("quitall")
+    end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time and close/exit neovim' })
 
     require('treesitter-context').setup { max_lines = 10, line_numbers = false }
 

@@ -1129,8 +1129,11 @@ do
       'http',
     }, additional_treesitter_parsers)
 
-    -- require('nvim-treesitter').install(parsers)
-    require('nvim-treesitter').install(parsers):await(function() print 'All Tree-sitter parsers are compiled and ready!' end)
+    require('nvim-treesitter').install(parsers)
+
+    vim.api.nvim_create_user_command('SyncTSInstall', function()
+        require('nvim-treesitter').install(parsers):wait(1 * 60 * 1000)
+    end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time' })
 
     require('treesitter-context').setup { max_lines = 10, line_numbers = false }
 

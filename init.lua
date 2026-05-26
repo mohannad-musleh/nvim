@@ -1656,88 +1656,103 @@ end
 -- Automatically provisions the environment when running headlessly
 -------------------------------------------------------------------------------
 if vim.env.RUN_BOOTSTRAP then
-  -------------------------------------------------------------------------------
-  -- HEADLESS BOOTSTRAP AUTOMATION
-  -------------------------------------------------------------------------------
-  -- Custom logger that forces output directly to the terminal stdout
-  -- (Standard `print` often gets buffered and hidden in headless mode)
-  local function log(msg)
-    io.write('[Bootstrap] ' .. msg .. '\n')
-    io.flush()
-  end
-
-  vim.schedule(function()
-    log '=== Headless Bootstrap Started ==='
-
-    -- 1. TRIGGER PLUGIN INSTALLATION
-    log 'Syncing vim.pack lockfile...'
-    local update_ok, err = pcall(function() vim.pack.update(nil, { target = 'lockfile', force = true }) end)
-    if not update_ok then log('Warning: vim.pack.update failed: ' .. tostring(err)) end
-
-    -- We use a timer to wait for async git clones to finish.
-    -- Every time a plugin installs, the timer resets. Once the network goes
-    -- quiet for 3 seconds, we move on to Tree-sitter and Mason.
-    local debounce_timer = vim.uv.new_timer()
-
-    local function run_post_install_hooks()
-      debounce_timer:stop()
-      debounce_timer:close()
-      log 'Plugin synchronization settled.'
-
-      -- 2. TREE-SITTER PHASE
-      log '→ Setting up Tree-sitter...'
-      vim.cmd 'packadd nvim-treesitter'
-      local ts_ok, ts = pcall(require, 'nvim-treesitter')
-      if ts_ok then
-        local parsers = { 'c', 'lua', 'vim', 'vimdoc', 'query' }
-        log('Compiling parsers: ' .. table.concat(parsers, ', '))
-
-        -- Blocks the Lua thread synchronously until finished
-        ts.install(parsers):wait(300000)
-        log '✓ Tree-sitter compilation complete.'
-      else
-        log '⚠ nvim-treesitter could not be loaded.'
-      end
-
-      -- 3. MASON PHASE
-      log '→ Setting up Mason LSPs & Debuggers...'
-      vim.cmd 'packadd mason.nvim'
-      local mason_ok, mason = pcall(require, 'mason')
-      if mason_ok then
-        mason.setup()
-        local tools = { 'lua-language-server', 'stylua' }
-        log('Installing: ' .. table.concat(tools, ', '))
-
-        -- MasonInstall natively blocks the main thread in headless mode
-        vim.cmd('MasonInstall ' .. table.concat(tools, ' '))
-        log '✓ Mason tools installed.'
-      else
-        log '⚠ mason.nvim could not be loaded.'
-      end
-
-      -- 4. TEARDOWN
-      log '=== Headless Bootstrap Complete! Exiting... ==='
-      vim.cmd 'qa!'
+  do
+    -- Force real-time terminal output since standard print() can buffer in headless mode
+    local function log(msg)
+      io.write('[Bootstrap] ' .. msg .. '\n')
+      io.flush()
     end
 
-    -- Listen for installation events to track progress and reset the timer
-    vim.api.nvim_create_autocmd('PackChanged', {
-      callback = function(ev)
-        if ev.data and ev.data.kind == 'install' then log('Downloaded: ' .. (ev.data.spec.name or 'unknown plugin')) end
-        -- Reset the 3-second countdown whenever a plugin lands
-        debounce_timer:stop()
-        debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
-      end,
-    })
+    vim.schedule(function()
+      log '=== Headless Bootstrap Started ==='
 
-    -- Start the initial countdown (If all plugins are already installed,
-    -- PackChanged won't fire, and it will proceed after 3 seconds)
-    debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+      -- 1. TRIGGER PLUGIN INSTALLATION
+      log 'Syncing plugins via vim.pack...'
+      pcall(function() vim.pack.update(nil, { target = 'lockfile', force = true }) end)
 
-    -- Ultimate Safety Net: Force quit with an error code if stuck for 10 minutes
-    vim.defer_fn(function()
-      log 'CRITICAL: Bootstrap timed out after 10 minutes. Aborting.'
-      vim.cmd 'cquit'
-    end, 600000)
-  end)
+      -- Setup a timer to wait for async git operations to settle.
+      -- Every time a plugin downloads, this timer resets. Once network activity
+      -- stops for 3 seconds, we move on to Tree-sitter and Mason.
+      local debounce_timer = vim.uv.new_timer()
+
+      local function run_post_install_hooks()
+        if debounce_timer then
+          debounce_timer:stop()
+          debounce_timer:close()
+        end
+        log 'Plugin synchronization settled.'
+
+        -- 2. TREE-SITTER PHASE
+        log '→ Setting up Tree-sitter...'
+        vim.cmd 'packadd nvim-treesitter'
+        local ts_ok, ts = pcall(require, 'nvim-treesitter')
+        if ts_ok then
+          local parsers = { 'c', 'lua', 'vim', 'vimdoc', 'query' }
+          log('Compiling parsers: ' .. table.concat(parsers, ', '))
+          ts.install(parsers):wait(300000) -- Blocks the thread for up to 5 minutes
+          log '✓ Tree-sitter compilation complete.'
+        else
+          log '⚠ nvim-treesitter could not be loaded.'
+        end
+
+        -- 3. MASON PHASE
+        log '→ Setting up Mason LSPs & Debuggers...'
+        vim.cmd 'packadd mason.nvim'
+        local mason_ok, mason = pcall(require, 'mason')
+        if mason_ok then
+          mason.setup()
+          local tools = { 'lua-language-server', 'stylua' }
+          log('Installing: ' .. table.concat(tools, ', '))
+
+          vim.cmd('MasonInstall ' .. table.concat(tools, ' '))
+
+          -- Poll the mason registry until installations are complete
+          local registry = require 'mason-registry'
+          local success = vim.wait(300000, function()
+            for _, tool in ipairs(tools) do
+              if registry.has_package(tool) then
+                local pkg = registry.get_package(tool)
+                if not pkg:is_installed() then
+                  return false -- Keep waiting, at least one tool isn't ready
+                end
+              else
+                return false -- Package registry hasn't updated yet, keep waiting
+              end
+            end
+            return true -- All tools are fully installed
+          end, 200) -- Check package status every 200 milliseconds
+
+          if success then
+            log '✓ Mason tools installed successfully.'
+          else
+            log '⚠ Mason installation timed out or a tool failed to install.'
+          end
+        else
+          log '⚠ mason.nvim could not be loaded.'
+        end
+
+        -- 4. TEARDOWN
+        log '=== Headless Bootstrap Complete! Exiting... ==='
+        vim.cmd 'qa!'
+      end
+
+      -- Listen for installation events to track progress and reset the timer
+      vim.api.nvim_create_autocmd('PackChanged', {
+        callback = function(ev)
+          if ev.data and ev.data.kind == 'install' then log('Downloaded: ' .. (ev.data.spec.name or 'unknown plugin')) end
+          debounce_timer:stop()
+          debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+        end,
+      })
+
+      -- Fallback: If plugins are already up-to-date, start hooks after 3 seconds
+      debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+
+      -- Ultimate Fail-Safe: Prevent infinite terminal hangs if a process locks up
+      vim.defer_fn(function()
+        log 'CRITICAL: Bootstrap timed out after 10 minutes. Aborting.'
+        vim.cmd 'cquit'
+      end, 600000)
+    end)
+  end
 end

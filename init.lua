@@ -29,6 +29,8 @@ require('vim._core.ui2').enable {}
 
 require 'config'
 
+-- Table of parsers to be installed additional to the default ones (used with ensure_installed)
+local additional_treesitter_parsers = {}
 -- ============================================================
 -- PLUGINS
 -- ============================================================
@@ -847,7 +849,17 @@ do
         vim.fs.joinpath(vim.fn.stdpath 'data', 'mason', 'packages', 'vue-language-server', 'node_modules', '@vue/language-server')
 
       local vtsls_config = {}
+
+      vim.list_extend(additional_treesitter_parsers, {
+        'html',
+        'css',
+        'javascript',
+        'typescript',
+        'jsdoc',
+      })
+
       if vim.fn.isdirectory(vue_language_server_path) == 1 then
+        table.insert(additional_treesitter_parsers, 'vue')
         local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' }
         local vue_plugin = {
           name = '@vue/typescript-plugin',
@@ -1101,11 +1113,10 @@ do
 
     -- Ensure basic parsers are installed
     -- local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-    local parsers = {
+    local parsers = vim.list_extend({
       'bash',
       'c',
       'diff',
-      'html',
       'lua',
       'luadoc',
       'markdown',
@@ -1114,18 +1125,12 @@ do
       'vim',
       'vimdoc',
       'regex',
-      'http',
-      'zig',
-      'css',
       'json',
-      'jsdoc',
-      'javascript',
-      'typescript',
-      'gotmpl',
-      'vue',
-    }
+      'http',
+    }, additional_treesitter_parsers)
 
-    require('nvim-treesitter').install(parsers)
+    -- require('nvim-treesitter').install(parsers)
+    require('nvim-treesitter').install(parsers):await(function() print 'All Tree-sitter parsers are compiled and ready!' end)
 
     require('treesitter-context').setup { max_lines = 10, line_numbers = false }
 
@@ -1464,6 +1469,7 @@ do
       dap_zig_enabled = true
       -- https://github.com/vadimcn/codelldb
       table.insert(ensure_installed, 'codelldb')
+      table.insert(additional_treesitter_parsers, 'zig')
     end
 
     if vim.lsp.is_enabled 'pyright' then

@@ -1703,45 +1703,49 @@ if vim.env.RUN_BOOTSTRAP then
           mason.setup()
           local registry = require 'mason-registry'
 
-          -- Safely refresh the package registry first to get up-to-date remote handles
           log 'Refreshing Mason registry index...'
           registry.refresh(function()
             local tools = { 'lua-language-server', 'stylua' }
-            local remaining = 0
 
+            -- Fire manual installations for explicit tools if they don't exist
             for _, tool_name in ipairs(tools) do
               if registry.has_package(tool_name) then
                 local pkg = registry.get_package(tool_name)
-                if not pkg:is_installed() then
-                  remaining = remaining + 1
-                  log('Starting installation: ' .. tool_name)
-
-                  -- Use Mason's programmatic hook to safely track completion
-                  pkg:install({}, function(success)
-                    remaining = remaining - 1
-                    if success then
-                      log('✓ Installed: ' .. tool_name)
-                    else
-                      log('⚠ Failed to install: ' .. tool_name)
-                    end
-                  end)
-                else
-                  log('✓ Already installed: ' .. tool_name)
+                if not pkg:is_installed() and not pkg:is_installing() then
+                  log('Starting explicit installation: ' .. tool_name)
+                  pkg:install {}
                 end
-              else
-                log('⚠ Unknown Mason package spec: ' .. tool_name)
               end
             end
 
-            -- Block thread execution right here until all background download callbacks finish
-            if remaining > 0 then
-              log('Waiting for background tool downloads (' .. remaining .. ' remaining)...')
-              vim.wait(300000, function() return remaining == 0 end, 200)
+            -- Pause briefly (3 seconds) to allow parallel autoinstall hooks
+            -- (from mason-lspconfig or mason-tool-installer) to initialize their tasks
+            log 'Allowing background autoinstall hooks to stabilize...'
+            vim.wait(3000, function() return false end)
+
+            -- Now, poll ALL possible packages globally until absolutely nothing is installing anymore
+            log 'Monitoring all active Mason installation handles globally...'
+            local last_active_pkg = ''
+            local success = vim.wait(300000, function()
+              for _, pkg in ipairs(registry.get_all_packages()) do
+                if pkg:is_installing() then
+                  if last_active_pkg ~= pkg.name then
+                    log('Background task busy: Installing ' .. pkg.name .. '...')
+                    last_active_pkg = pkg.name
+                  end
+                  return false -- Something is actively downloading; keep waiting
+                end
+              end
+              return true -- Absolutely everything is clear!
+            end, 500)
+
+            if success then
+              log '✓ All Mason packages/tools are completely finished installing.'
+            else
+              log '⚠ Mason synchronization timed out.'
             end
 
-            log '✓ Mason phase finished.'
-
-            -- 4. TEARDOWN (Trapped inside the final callback so it can never trigger early)
+            -- 4. TEARDOWN
             log '=== Headless Bootstrap Complete! Exiting... ==='
             vim.cmd 'qa!'
           end)
@@ -1764,7 +1768,7 @@ if vim.env.RUN_BOOTSTRAP then
       -- Fallback: If plugins are already up-to-date, start hooks after 3 seconds
       debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
 
-      -- Ultimate Fail-Safe: Prevent infinite terminal hangs if a network process locks up
+      -- Ultimate Fail-Safe: Prevent infinite terminal hangs if a process locks up
       vim.defer_fn(function()
         log 'CRITICAL: Bootstrap timed out after 10 minutes. Aborting.'
         vim.cmd 'cquit'

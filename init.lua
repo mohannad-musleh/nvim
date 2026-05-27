@@ -23,6 +23,7 @@ vim.loader.enable()
 
 local utils = require 'utils'
 local vim_pack_helpers = require 'helpers.vim_pack'
+local workspace_helpers = require 'helpers.workspace'
 local gh = vim_pack_helpers.gh
 
 require('vim._core.ui2').enable {}
@@ -853,7 +854,8 @@ do
       end
     end
 
-    if utils.executable 'npm' then
+    if utils.executable 'npm' and workspace_helpers.is_fe_project() then
+      local is_vue_project = workspace_helpers.is_fe_project { 'vue' }
       local vue_language_server_path =
         vim.fs.joinpath(vim.fn.stdpath 'data', 'mason', 'packages', 'vue-language-server', 'node_modules', '@vue/language-server')
 
@@ -867,7 +869,7 @@ do
         'jsdoc',
       })
 
-      if vim.fn.isdirectory(vue_language_server_path) == 1 then
+      if is_vue_project and vim.fn.isdirectory(vue_language_server_path) == 1 then
         table.insert(additional_treesitter_parsers, 'vue')
         local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' }
         local vue_plugin = {

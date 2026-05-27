@@ -70,6 +70,14 @@ do
     end,
   })
 
+  vim.api.nvim_create_user_command(
+    'VimPackList',
+    function() vim.pack.update(nil, { offline = true }) end,
+    { nargs = 0, desc = 'List installed packages using vim.pack' }
+  )
+
+  vim.api.nvim_create_user_command('VimPackUpdate', function() vim.pack.update() end, { nargs = 0, desc = 'Update installed packages using vim.pack' })
+
   do -- NeoVIM builtin plugins
     vim.schedule(function()
       -- To open a visual and interactive undo tree, type :Undotree
@@ -832,8 +840,11 @@ do
     end
 
     if utils.executable 'docker' then
-      servers['dockerls'] = {}
-      servers['docker_compose_language_service'] = {}
+      if utils.executable 'npm' then
+        servers['dockerls'] = {}
+        servers['docker_compose_language_service'] = {}
+      end
+
       table.insert(additional_treesitter_parsers, 'dockerfile')
     end
 
@@ -1769,13 +1780,15 @@ if vim.env.RUN_BOOTSTRAP then
       vim.api.nvim_create_autocmd('PackChanged', {
         callback = function(ev)
           if ev.data and ev.data.kind == 'install' then log('Downloaded: ' .. (ev.data.spec.name or 'unknown plugin')) end
-          debounce_timer:stop()
-          debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+          if debounce_timer ~= nil then
+            debounce_timer:stop()
+            debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+          end
         end,
       })
 
       -- Fallback: If plugins are already up-to-date, start hooks after 3 seconds
-      debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks))
+      if debounce_timer ~= nil then debounce_timer:start(3000, 0, vim.schedule_wrap(run_post_install_hooks)) end
 
       -- Ultimate Fail-Safe: Prevent infinite terminal hangs if a process locks up
       vim.defer_fn(function()

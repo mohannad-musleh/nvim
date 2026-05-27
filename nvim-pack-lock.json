@@ -1,9 +1,5 @@
 {
   "plugins": {
-    "SchemaStore.nvim": {
-      "rev": "e25e63f3b24fd6b8c2fc713107ad5d5594028eac",
-      "src": "https://github.com/b0o/SchemaStore.nvim"
-    },
     "blink.cmp": {
       "rev": "78336bc89ee5365633bcf754d93df01678b5c08f",
       "src": "https://github.com/saghen/blink.cmp",
@@ -60,14 +56,6 @@
     "nvim-dap": {
       "rev": "531771530d4f82ad2d21e436e3cc052d68d7aebb",
       "src": "https://github.com/mfussenegger/nvim-dap"
-    },
-    "nvim-dap-go": {
-      "rev": "b4421153ead5d726603b02743ea40cf26a51ed5f",
-      "src": "https://github.com/leoluz/nvim-dap-go"
-    },
-    "nvim-dap-python": {
-      "rev": "1808458eba2b18f178f990e01376941a42c7f93b",
-      "src": "https://github.com/mfussenegger/nvim-dap-python"
     },
     "nvim-dap-ui": {
       "rev": "1a66cabaa4a4da0be107d5eda6d57242f0fe7e49",

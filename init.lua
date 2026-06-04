@@ -1662,6 +1662,11 @@ do
       'http',
     }, additional_treesitter_parsers)
 
+    local global_parsers_list = vim.g.tree_sitter_ensure_installed
+    if global_parsers_list ~= nil and vim.islist(global_parsers_list) and not vim.tbl_isempty(global_parsers_list) then
+      parsers = vim.list_extend(parsers, global_parsers_list)
+    end
+
     require('nvim-treesitter').install(parsers)
 
     vim.api.nvim_create_user_command('SyncTSInstall', function()

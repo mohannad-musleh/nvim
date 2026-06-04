@@ -1662,12 +1662,19 @@ do
       'http',
     }, additional_treesitter_parsers)
 
-    local global_parsers_list = vim.g.tree_sitter_ensure_installed
-    if global_parsers_list ~= nil and vim.islist(global_parsers_list) and not vim.tbl_isempty(global_parsers_list) then
-      parsers = vim.list_extend(parsers, global_parsers_list)
-    end
-
     require('nvim-treesitter').install(parsers)
+
+    -- use this from `.nvim.lua` like this: `vim.api.nvim_exec_autocmds("User", { pattern = "ProjectConfigLoaded" })`
+    vim.api.nvim_create_autocmd('User', {
+      pattern = 'ProjectConfigLoaded',
+      once = true,
+      callback = function()
+        local global_parsers_list = vim.g.tree_sitter_ensure_installed
+        if global_parsers_list ~= nil and vim.islist(global_parsers_list) and not vim.tbl_isempty(global_parsers_list) then
+          require('nvim-treesitter').install(global_parsers_list):wait(300000) -- 5 mins
+        end
+      end,
+    })
 
     vim.api.nvim_create_user_command('SyncTSInstall', function()
       require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins

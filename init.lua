@@ -1,3 +1,51 @@
+-- 1. Resolve the path to your pre-config file
+local pre_config_path = vim.fs.root(0, { '.pre.nvim.lua' })
+if pre_config_path then
+  local full_path = pre_config_path .. '/.pre.nvim.lua'
+
+  -- 2. Use Neovim's official security layer to read the file contents.
+  -- This natively triggers the trusted/untrusted prompt and handles :trust.
+  local file_content = vim.secure.read(full_path)
+
+  if file_content and type(file_content) == 'string' then
+    -- 3. Parse the file code into a function
+    local loaded_chunk, load_err = loadstring(file_content, '@' .. full_path)
+
+    if loaded_chunk then
+      -- 4. Create a Sandbox Environment.
+      -- By mapping standard global spaces to an empty table, we block functions,
+      -- loops, requires, print statements, and OS execution entirely.
+      local sandbox = {
+        -- 1. Core namespaces
+        vim = {
+          g = vim.g,
+          env = vim.env,
+        },
+
+        -- 2. Math Library (Exposes math.abs, math.floor, math.max, etc.)
+        math = math,
+
+        -- 3. String Library (Exposes string.find, string.match, string.sub, etc.)
+        string = string,
+
+        -- 4. Global Lua conversion functions (Safe and vital for string parsing)
+        tonumber = tonumber,
+        tostring = tostring,
+        type = type,
+      }
+
+      -- Set the sandbox as the evaluation environment for the loaded file
+      setfenv(loaded_chunk, sandbox)
+
+      -- 5. Safe execute the project config file safely before init.lua continues
+      local success, exec_err = pcall(loaded_chunk)
+      if not success then vim.notify('Pre-config runtime error: ' .. tostring(exec_err), vim.log.levels.ERROR) end
+    elseif load_err then
+      vim.notify('Pre-config compilation error: ' .. tostring(load_err), vim.log.levels.ERROR)
+    end
+  end
+end
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -865,7 +913,7 @@ do
       end
     end
 
-    if utils.executable 'npm' and workspace_helpers.is_fe_project() then
+    if utils.executable 'npm' and workspace_helpers.is_fe_project() and not vim.g.disable_fe_plugins then
       local is_vue_project = workspace_helpers.is_fe_project { 'vue' }
       local vue_language_server_path =
         vim.fs.joinpath(vim.fn.stdpath 'data', 'mason', 'packages', 'vue-language-server', 'node_modules', '@vue/language-server')

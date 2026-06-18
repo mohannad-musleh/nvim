@@ -928,27 +928,34 @@ do
         'jsdoc',
       })
 
-      if is_vue_project and vim.fn.isdirectory(vue_language_server_path) == 1 then
+      if is_vue_project then
         table.insert(additional_treesitter_parsers, 'vue')
-        local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' }
-        local vue_plugin = {
-          name = '@vue/typescript-plugin',
-          location = vue_language_server_path,
-          languages = { 'vue' },
-          configNamespace = 'typescript',
-        }
-        vtsls_config = {
-          settings = {
-            vtsls = {
-              tsserver = {
-                globalPlugins = {
-                  vue_plugin,
+
+        if vim.fn.isdirectory(vue_language_server_path) == 1 then
+          local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' }
+          local vue_plugin = {
+            name = '@vue/typescript-plugin',
+            location = vue_language_server_path,
+            languages = { 'vue' },
+            configNamespace = 'typescript',
+          }
+          vtsls_config = {
+            settings = {
+              vtsls = {
+                tsserver = {
+                  globalPlugins = {
+                    vue_plugin,
+                  },
                 },
               },
             },
-          },
-          filetypes = tsserver_filetypes,
-        }
+            filetypes = tsserver_filetypes,
+          }
+        else
+          servers = vim.tbl_extend('force', servers, {
+            vue = {},
+          })
+        end
       end
 
       servers = vim.tbl_extend('force', servers, {

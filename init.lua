@@ -60,12 +60,6 @@ vim.g.have_nerd_font = false
 -- currently the folding is managed by `nvim-ufo`. Hopefully I can replace it with native + treesitter setup
 vim.g.enable_native_folding = false
 
--- Disable providers you don't use
-vim.g.loaded_node_provider = 0
-vim.g.loaded_python3_provider = 0
-vim.g.loaded_ruby_provider = 0
-vim.g.loaded_perl_provider = 0
-
 -- Enable faster startup by caching compiled Lua modules
 vim.loader.enable()
 
@@ -80,8 +74,24 @@ require 'config'
 
 local treesitter_installed = false
 
--- Table of parsers to be installed additional to the default ones (used with ensure_installed)
-local additional_treesitter_parsers = {}
+local treesitter_parsers = {
+  'bash',
+  'c',
+  'diff',
+  'lua',
+  'luadoc',
+  'markdown',
+  'markdown_inline',
+  'query',
+  'vim',
+  'vimdoc',
+  'regex',
+  'json',
+  'http',
+}
+
+if type(vim.g.additional_treesitter_parsers) == 'table' then vim.list_extend(treesitter_parsers, vim.g.additional_treesitter_parsers) end
+
 -- ============================================================
 -- PLUGINS
 -- ============================================================
@@ -879,12 +889,12 @@ do
 
     if utils.executable 'gopls' then
       servers['gopls'] = {}
-      table.insert(additional_treesitter_parsers, 'go')
+      table.insert(treesitter_parsers, 'go')
     end
 
     if utils.executable 'zls' then
       servers['zls'] = {}
-      table.insert(additional_treesitter_parsers, 'zig')
+      table.insert(treesitter_parsers, 'zig')
     end
 
     if utils.executable 'docker' then
@@ -893,7 +903,7 @@ do
         servers['docker_compose_language_service'] = {}
       end
 
-      table.insert(additional_treesitter_parsers, 'dockerfile')
+      table.insert(treesitter_parsers, 'dockerfile')
     end
 
     if utils.executable 'python' then
@@ -914,13 +924,9 @@ do
     end
 
     if utils.executable 'npm' and workspace_helpers.is_fe_project() and not vim.g.disable_fe_plugins then
-      local is_vue_project = workspace_helpers.is_fe_project { 'vue' }
-      local vue_language_server_path =
-        vim.fs.joinpath(vim.fn.stdpath 'data', 'mason', 'packages', 'vue-language-server', 'node_modules', '@vue/language-server')
-
       local vtsls_config = {}
 
-      vim.list_extend(additional_treesitter_parsers, {
+      vim.list_extend(treesitter_parsers, {
         'html',
         'css',
         'javascript',
@@ -928,9 +934,20 @@ do
         'jsdoc',
       })
 
-      if is_vue_project then
-        table.insert(additional_treesitter_parsers, 'vue')
+      if workspace_helpers.is_fe_project { 'vue' } then
+        table.insert(treesitter_parsers, 'vue')
 
+        local is_custom_vue_lsp_location = false
+        local vue_language_server_path =
+          vim.fs.joinpath(vim.fn.stdpath 'data', 'mason', 'packages', 'vue-language-server', 'node_modules', '@vue/language-server')
+
+        if type(vim.g.vue_lsp_location) == 'string' and vim.g.vue_lsp_location ~= '' then
+          vue_language_server_path = vim.g.vue_lsp_location
+          is_custom_vue_lsp_location = true
+        end
+
+        -- For vue setup, install the LSP manually.
+        -- cmd: nvim --headless -c 'packloadall' -c 'MasonInstall vue-language-server' -c qall
         if vim.fn.isdirectory(vue_language_server_path) == 1 then
           local tsserver_filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' }
           local vue_plugin = {
@@ -951,10 +968,8 @@ do
             },
             filetypes = tsserver_filetypes,
           }
-        else
-          servers = vim.tbl_extend('force', servers, {
-            vue = {},
-          })
+        elseif is_custom_vue_lsp_location then
+          vim.notify('Vue LSP is not available at `' .. vue_language_server_path .. '`', 'warn', {})
         end
       end
 
@@ -1527,7 +1542,7 @@ do
       dap_zig_enabled = true
       -- https://github.com/vadimcn/codelldb
       table.insert(ensure_installed, 'codelldb')
-      table.insert(additional_treesitter_parsers, 'zig')
+      table.insert(treesitter_parsers, 'zig')
     end
 
     if vim.lsp.is_enabled 'pyright' then
@@ -1699,40 +1714,10 @@ do
   end
 
   if treesitter_installed then
-    -- Ensure basic parsers are installed
-    -- local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-    local parsers = vim.list_extend({
-      'bash',
-      'c',
-      'diff',
-      'lua',
-      'luadoc',
-      'markdown',
-      'markdown_inline',
-      'query',
-      'vim',
-      'vimdoc',
-      'regex',
-      'json',
-      'http',
-    }, additional_treesitter_parsers)
-
-    require('nvim-treesitter').install(parsers)
-
-    -- use this from `.nvim.lua` like this: `vim.api.nvim_exec_autocmds("User", { pattern = "ProjectConfigLoaded" })`
-    vim.api.nvim_create_autocmd('User', {
-      pattern = 'ProjectConfigLoaded',
-      once = true,
-      callback = function()
-        local global_parsers_list = vim.g.tree_sitter_ensure_installed
-        if global_parsers_list ~= nil and vim.islist(global_parsers_list) and not vim.tbl_isempty(global_parsers_list) then
-          require('nvim-treesitter').install(global_parsers_list):wait(300000) -- 5 mins
-        end
-      end,
-    })
+    require('nvim-treesitter').install(treesitter_parsers)
 
     vim.api.nvim_create_user_command('SyncTSInstall', function()
-      require('nvim-treesitter').install(parsers):wait(300000) -- 5 mins
+      require('nvim-treesitter').install(treesitter_parsers):wait(300000) -- 5 mins
       vim.cmd 'quitall'
     end, { nargs = 0, desc = 'Install treesitter parsers with one minute waiting time and close/exit neovim' })
   end

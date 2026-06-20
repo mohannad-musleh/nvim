@@ -43,6 +43,10 @@ if pre_config_path then
     elseif load_err then
       vim.notify('Pre-config compilation error: ' .. tostring(load_err), vim.log.levels.ERROR)
     end
+  elseif type(file_content) == 'boolean' and file_content == false then
+    vim.g.disable_fe_plugins = true
+    vim.g.additional_treesitter_parsers = nil
+    vim.g.vue_lsp_location = nil
   end
 end
 
